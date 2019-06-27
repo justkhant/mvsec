@@ -28,7 +28,7 @@ def convert_events(hdf5_file, bag_path, side='left'):
     mvsec_event_reader = MR.EventReader(bag_path, side)
     camera_type = 'davis'
 
-    side_group = create_side_group(hdf5_file, camera_type, side)
+    side_group = create_side_group(hdf5_file, camera_type, None)
 
     events_dataset = side_group.create_dataset("events",
             data=mvsec_event_reader.events)
@@ -42,7 +42,7 @@ def convert_images(hdf5_file, bag_path,
     mvsec_image_reader = MR.ImageReader(bag_path, camera_type, side, name)
     nimages = len(mvsec_image_reader)-1
 
-    side_group = create_side_group(hdf5_file, camera_type, side)
+    side_group = create_side_group(hdf5_file, 'davis', None)
 
     sample_img = mvsec_image_reader[0][0]
     images_dataset = side_group.create_dataset(name,
@@ -72,7 +72,7 @@ def convert_images(hdf5_file, bag_path,
 def convert_flow(hdf5_file, npy_path):
     print("============FLOW=============")
     flow_reader = MR.FlowReader(npy_path)
-    side_group = create_side_group(hdf5_file, 'davis', 'left')
+    side_group = create_side_group(hdf5_file, 'davis', None)
 
     sample_img = flow_reader[0][0]
     nimages = len(flow_reader)
@@ -101,7 +101,7 @@ def convert_flow(hdf5_file, npy_path):
 def convert_odom(hdf5_file, bag_path, topic='odometry'):
     print("============ODOM %s=============" % (topic))
     odom_reader = MR.OdomReader(bag_path, topic)
-    side_group = create_side_group(hdf5_file, 'davis', 'left')
+    side_group = create_side_group(hdf5_file, 'davis', None)
 
     n_samples = len(odom_reader)
     odom = side_group.create_dataset(topic,
@@ -169,37 +169,39 @@ def convert_data(path):
     has_right_images = not "outdoor_day" in path
     has_ground_truth = not "motorcycle" in path
 
-    data_bag_path = path+'_data.bag'
+    data_bag_path = path
 
     data_file = h5py.File(path+"_data.hdf5", 'w')
 
     davis_group = data_file.create_group("davis")
-    davis_left_group = davis_group.create_group("left")
+    #davis_left_group = davis_group.create_group("left")
 
-    left_events = convert_events(data_file, data_bag_path, 'left')
-    convert_imu(data_file, data_bag_path, "davis", "left")
+    left_events = convert_events(data_file, data_bag_path, '')
+#    convert_imu(data_file, data_bag_path, "davis", None)
     convert_images(data_file, data_bag_path,
-                   "davis", "left", "image_raw",
+                   "cam0", "", "image_raw",
                    ts_match=left_events.events[:,2])
+    
     left_events = None
-
-    right_events = convert_events(data_file, data_bag_path, 'right')
-    convert_imu(data_file, data_bag_path, "davis", "right")
+    convert_odom(data_file, data_bag_path, 'pose')
+    """
+right_events = convert_events(data_file, data_bag_path, 'right')
+    convert_imu(data_file, data_bag_path, "davis", None)
     if has_right_images:
         convert_images(data_file, data_bag_path,
                        "davis", "right", "image_raw",
                        ts_match=right_events.events[:,2])
     right_events = None
+"""
+    #if has_visensor:
+     #   convert_images(data_file, data_bag_path,
+      #                 "visensor", "right", "image_raw")
+       # convert_images(data_file, data_bag_path,
+        #               "visensor", "left", "image_raw")
+       # convert_imu(data_file, data_bag_path, "visensor", None)
 
-    if has_visensor:
-        convert_images(data_file, data_bag_path,
-                       "visensor", "right", "image_raw")
-        convert_images(data_file, data_bag_path,
-                       "visensor", "left", "image_raw")
-        convert_imu(data_file, data_bag_path, "visensor", None)
-
-    if has_ground_truth:
-        convert_velodyne(data_file, data_bag_path)
+#    if has_ground_truth:
+ #       convert_velodyne(data_file, data_bag_path)
 
     data_file.flush()
     data_file.close()
@@ -212,15 +214,16 @@ def convert_gt(path):
     if not has_ground_truth:
         return
 
-    gt_bag_path = path+'_gt.bag'
+    gt_bag_path = path
     gt_file = h5py.File(path+"_gt.hdf5", 'w')
+    
+    """
     convert_images(gt_file, gt_bag_path,
                    "davis", "left", "blended_image_rect")
     convert_images(gt_file, gt_bag_path,
                    "davis", "left", "depth_image_raw")
     convert_images(gt_file, gt_bag_path,
                    "davis", "left", "depth_image_rect")
-
     if has_right_images:
         convert_images(gt_file, gt_bag_path,
                        "davis", "right", "blended_image_rect")
@@ -230,11 +233,12 @@ def convert_gt(path):
                        "davis", "right", "depth_image_rect")
 
     convert_odom(gt_file, gt_bag_path, 'odometry')
-    convert_odom(gt_file, gt_bag_path, 'pose')
-
+    """
+    #convert_odom(gt_file, gt_bag_path, 'pose')
+    """
     flow_path = path+'_gt_flow_dist.npz'
     convert_flow(gt_file, flow_path)
-
+    """
     gt_file.flush()
     gt_file.close()
 
@@ -246,11 +250,11 @@ if __name__ == "__main__":
             # '/home/ken/datasets/mvsec/indoor_flying/indoor_flying4',
             # '/home/ken/datasets/mvsec/outdoor_day/outdoor_day1',
             # '/home/ken/datasets/mvsec/outdoor_day/outdoor_day2',
-            '/home/ken/datasets/mvsec/outdoor_night/outdoor_night1',
+            '/home/khantk/kitti_data/bags/000000.bag', 
             # '/home/ken/datasets/mvsec/outdoor_night/outdoor_night2',
             # '/home/ken/datasets/mvsec/outdoor_night/outdoor_night3',
             # '/home/ken/datasets/mvsec/motorcycle/motorcycle1',
             ]
     for seq in dataset_list:
         convert_data(seq)
-        convert_gt(seq)
+       # convert_gt(seq)

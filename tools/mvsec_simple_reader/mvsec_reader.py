@@ -35,34 +35,34 @@ def load_bag(bag_path):
     HAS_SYNCNED_GT = not 'motorcycle' in bag_path
 
     sync_topics = []
-    if '_data.bag' in bag_path:
-        if HAS_LEFT_IMAGES:
-            sync_topics.append(["/davis/left/image_raw",
-                                "/davis/left/camera_info"])
-        if HAS_RIGHT_IMAGES:
-            sync_topics.append(["/davis/right/image_raw",
-                                "/davis/right/camera_info"])
-        if HAS_VI_SENSOR:
-            sync_topics.append(["/visensor/right/image_raw",
-                                "/visensor/right/camera_info",  
-                                "/visensor/left/image_raw",
-                                "/visensor/left/camera_info"])
-    elif '_gt.bag' in bag_path:
-        if HAS_SYNCNED_GT:
-            sync_topics.append(["/davis/left/blended_image_rect",
-                                 "/davis/left/depth_image_raw",
-                                 "/davis/left/depth_image_rect",
-                                 "/davis/left/odometry",
-                                 "/davis/left/camera_info"])
-            sync_topics.append(["/davis/right/blended_image_rect",
-                                 "/davis/right/depth_image_raw",
-                                 "/davis/right/depth_image_rect",
-                                 "/davis/right/camera_info"])
-    else:
-        raise NotImplementedError("The MVSEC datasets only end in\
-                _data.bag or _gt.bag")
-
-    sync_topics = [ (t, [0.01]*len(t)) for t in sync_topics ]
+    #if '_data.bag' in bag_path or True:
+    #    if HAS_LEFT_IMAGES:
+    #        sync_topics.append(["/davis/left/image_raw",
+    #                            "/davis/left/camera_info"])
+    #    if HAS_RIGHT_IMAGES:
+    #        sync_topics.append(["/davis/right/image_raw",
+    #                            "/davis/right/camera_info"])
+    #    if HAS_VI_SENSOR:
+    #        sync_topics.append(["/visensor/right/image_raw",
+    #                            "/visensor/right/camera_info",  
+    #                            "/visensor/left/image_raw",
+    #                            "/visensor/left/camera_info"])
+    #elif '_gt.bag' in bag_path:
+    #    if HAS_SYNCNED_GT:
+    #        sync_topics.append(["/davis/left/blended_image_rect",
+    #                             "/davis/left/depth_image_raw",
+    #                             "/davis/left/depth_image_rect",
+    #                             "/davis/left/odometry",
+    #                             "/davis/left/camera_info"])
+    #        sync_topics.append(["/davis/right/blended_image_rect",
+    #                             "/davis/right/depth_image_raw",
+    #                             "/davis/right/depth_image_rect",
+    #                             "/davis/right/camera_info"])
+    #else:
+    #    raise NotImplementedError("The MVSEC datasets only end in\
+    #            _data.bag or _gt.bag")
+    #
+    #sync_topics = [ (t, [0.01]*len(t)) for t in sync_topics ]
 
     return get_bag_indexer(bag_path, sync_topics)
 
@@ -95,7 +95,7 @@ class EventReader(object):
         """ Loads all events from camera_side
         - Caches the events if a cache doesn't yet exist
         """
-        npy_cache_path = self.bag_path+"_"+camera_side+"_events.npy"
+        npy_cache_path = self.bag_path+"_"+"events.npy"
 
         if os.path.exists(npy_cache_path):
             events = np.load(npy_cache_path)
@@ -103,8 +103,8 @@ class EventReader(object):
             print("Extracting "+camera_side+" events from bag")
             self.bag = load_bag(self.bag_path)
 
-            event_reader = self.bag.get_topic_reader('/davis/'
-                    +camera_side+'/events')
+            event_reader = self.bag.get_topic_reader('/cam0/events')
+                   
 
             event_list = []
             for i in tqdm(range(len(event_reader))):
@@ -302,10 +302,10 @@ class OdomReader(object):
     def __init__(self, bag_path, topic='odometry',
             start_time=None, end_time=None):
 
-        assert '_gt.bag' in bag_path
+        #assert '_gt.bag' in bag_path
 
         self.bag = load_bag(bag_path)
-        full_topic = '/davis/left/'+topic
+        full_topic = '/cam0/' +topic
         self.full_topic = full_topic
         self.odom_reader = self.bag.get_topic_reader(full_topic)
 
