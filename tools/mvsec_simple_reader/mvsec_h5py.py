@@ -6,6 +6,8 @@ import mvsec_reader as MR
 import h5py
 import numpy as np
 from tqdm import tqdm
+from os.path import join
+import argparse
 
 def create_side_group(hdf5_file, camera_type, side):
     if camera_type in hdf5_file.keys():
@@ -164,14 +166,13 @@ def convert_velodyne(hdf5_file, bag_path):
         velo_dataset[i,...] = padded_scan
         times_dataset[i] = ts
 
-def convert_data(path):
+def convert_data(path, hdf5_dest):
     has_visensor = "outdoor_" in path or "motorcycle" in path
     has_right_images = not "outdoor_day" in path
     has_ground_truth = not "motorcycle" in path
 
     data_bag_path = path
-
-    data_file = h5py.File(path+"_data.hdf5", 'w')
+    data_file = h5py.File(hdf5_dest + "_data.hdf5", 'w')
 
     davis_group = data_file.create_group("davis")
     #davis_left_group = davis_group.create_group("left")
@@ -243,18 +244,24 @@ def convert_gt(path):
     gt_file.close()
 
 if __name__ == "__main__":
-    dataset_list = [
+    #dataset_list = [
             # '/home/ken/datasets/mvsec/indoor_flying/indoor_flying1',
             # '/home/ken/datasets/mvsec/indoor_flying/indoor_flying2',
             # '/home/ken/datasets/mvsec/indoor_flying/indoor_flying3',
             # '/home/ken/datasets/mvsec/indoor_flying/indoor_flying4',
             # '/home/ken/datasets/mvsec/outdoor_day/outdoor_day1',
             # '/home/ken/datasets/mvsec/outdoor_day/outdoor_day2',
-            '/home/khantk/kitti_data/bags/000000.bag', 
+            #'/home/khantk/kitti_data/bags/temp.bag', 
             # '/home/ken/datasets/mvsec/outdoor_night/outdoor_night2',
             # '/home/ken/datasets/mvsec/outdoor_night/outdoor_night3',
             # '/home/ken/datasets/mvsec/motorcycle/motorcycle1',
-            ]
-    for seq in dataset_list:
-        convert_data(seq)
+            #]
+    parser = argparse.ArgumentParser(description="Writes a bag to hdf5 format")
+    parser.add_argument('bag', help='path to bag')
+    parser.add_argument('hdf5_dest', help='path to dest')
+    args = parser.parse_args()
+
+    bag = args.bag
+    hdf5_dest = args.hdf5_dest
+    convert_data(bag, hdf5_dest)
        # convert_gt(seq)
